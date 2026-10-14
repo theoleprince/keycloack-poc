@@ -1,0 +1,264 @@
+{
+  "realm": "plateforme",
+  "displayName": "Plateforme (POC)",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "organizationsEnabled": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyCodeReusable": false,
+  "otpSupportedApplications": ["totpAppFreeOTPName", "totpAppGoogleName", "totpAppMicrosoftAuthenticatorName"],
+  "roles": {
+    "realm": [
+      { "name": "user", "description": "Utilisateur d'une société" },
+      { "name": "admin", "description": "Administrateur de SA société (pas de super-admin inter-sociétés)" },
+      { "name": "offline_access", "description": "${role_offline-access}" },
+      { "name": "uma_authorization", "description": "${role_uma_authorization}" },
+      {
+        "name": "default-roles-plateforme",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": { "realm": ["offline_access", "uma_authorization", "user"] }
+      }
+    ]
+  },
+  "defaultRole": { "name": "default-roles-plateforme", "composite": true },
+  "requiredActions": [
+    { "alias": "CONFIGURE_TOTP", "name": "Configure OTP", "providerId": "CONFIGURE_TOTP", "enabled": true, "defaultAction": true, "priority": 10, "config": {} },
+    { "alias": "UPDATE_PASSWORD", "name": "Update Password", "providerId": "UPDATE_PASSWORD", "enabled": true, "defaultAction": false, "priority": 30, "config": {} },
+    { "alias": "UPDATE_PROFILE", "name": "Update Profile", "providerId": "UPDATE_PROFILE", "enabled": true, "defaultAction": false, "priority": 40, "config": {} },
+    { "alias": "VERIFY_EMAIL", "name": "Verify Email", "providerId": "VERIFY_EMAIL", "enabled": true, "defaultAction": false, "priority": 50, "config": {} },
+    { "alias": "VERIFY_PROFILE", "name": "Verify Profile", "providerId": "VERIFY_PROFILE", "enabled": true, "defaultAction": false, "priority": 90, "config": {} },
+    { "alias": "delete_credential", "name": "Delete Credential", "providerId": "delete_credential", "enabled": true, "defaultAction": false, "priority": 100, "config": {} },
+    { "alias": "update_user_locale", "name": "Update User Locale", "providerId": "update_user_locale", "enabled": true, "defaultAction": false, "priority": 1000, "config": {} }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"api_url\",\"displayName\":\"URL du backend\",\"validations\":{\"length\":{\"max\":512}},\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "projet-1",
+      "name": "Projet 1 (app mobile)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": ["com.example.pocapp://login-callback"],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "com.example.pocapp://logout-callback",
+        "use.refresh.tokens": "true"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "basic", "profile", "email", "roles"],
+      "optionalClientScopes": ["offline_access", "organization"],
+      "protocolMappers": [
+        {
+          "name": "audience projet-1",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "projet-1",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "api_url",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "api_url",
+            "claim.name": "api_url",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "projet-2",
+      "name": "Projet 2 (app mobile)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": ["com.example.pocapp://login-callback"],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "com.example.pocapp://logout-callback",
+        "use.refresh.tokens": "true"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "basic", "profile", "email", "roles"],
+      "optionalClientScopes": ["offline_access", "organization"],
+      "protocolMappers": [
+        {
+          "name": "audience projet-2",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "projet-2",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "api_url",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "api_url",
+            "claim.name": "api_url",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "laravel-importer",
+      "name": "Laravel – import des utilisateurs (service account)",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "dev-only-importer-secret-CHANGE-ME",
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [],
+      "webOrigins": [],
+      "defaultClientScopes": ["roles", "basic"],
+      "optionalClientScopes": []
+    }
+  ],
+  "organizations": [
+    {
+      "name": "ACME",
+      "alias": "acme",
+      "enabled": true,
+      "description": "Société ACME",
+      "domains": [{ "name": "acme.test", "verified": false }],
+      "members": [{ "username": "alice" }, { "username": "bob" }]
+    },
+    {
+      "name": "Globex",
+      "alias": "globex",
+      "enabled": true,
+      "description": "Société Globex",
+      "domains": [{ "name": "globex.test", "verified": false }],
+      "members": [{ "username": "carol" }]
+    },
+    {
+      "name": "Initech",
+      "alias": "initech",
+      "enabled": true,
+      "description": "Société Initech",
+      "domains": [{ "name": "initech.test", "verified": false }],
+      "members": [{ "username": "dave" }]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "email": "alice@acme.test",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Acme",
+      "enabled": true,
+      "attributes": { "api_url": ["http://10.0.2.2:8000"] },
+      "credentials": [{ "type": "password", "value": "Alice#2026", "temporary": false }],
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["default-roles-plateforme", "user"]
+    },
+    {
+      "username": "bob",
+      "email": "bob@acme.test",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Acme",
+      "enabled": true,
+      "attributes": { "api_url": ["http://10.0.2.2:8000"] },
+      "credentials": [{ "type": "password", "value": "Bob#2026", "temporary": false }],
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["default-roles-plateforme", "user", "admin"]
+    },
+    {
+      "username": "carol",
+      "email": "carol@globex.test",
+      "emailVerified": true,
+      "firstName": "Carol",
+      "lastName": "Globex",
+      "enabled": true,
+      "attributes": { "api_url": ["http://10.0.2.2:8000"] },
+      "credentials": [{ "type": "password", "value": "Carol#2026", "temporary": false }],
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["default-roles-plateforme", "user"]
+    },
+    {
+      "username": "dave",
+      "email": "dave@initech.test",
+      "emailVerified": true,
+      "firstName": "Dave",
+      "lastName": "Initech",
+      "enabled": true,
+      "attributes": { "api_url": ["http://10.0.2.2:8000"] },
+      "credentials": [{ "type": "password", "value": "Dave#2026", "temporary": false }],
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["default-roles-plateforme", "user", "admin"]
+    },
+    {
+      "username": "service-account-laravel-importer",
+      "enabled": true,
+      "serviceAccountClientId": "laravel-importer",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-users", "manage-realm"]
+      }
+    }
+  ]
+}

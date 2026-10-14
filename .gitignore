@@ -1,0 +1,4 @@
+# Secrets TOTP générés par scripts/kc-token.php (DEV)
+scripts/.totp/
+# Laravel / Flutter ont leurs propres .gitignore (api/, mobile/)
+.env
